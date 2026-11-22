@@ -1,0 +1,10 @@
+{
+  "name": "TERRA Track Rider",
+  "description": "Mobile-first road-safety app for motorcycle riders showing real-time potholes reported by IoT sensors.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

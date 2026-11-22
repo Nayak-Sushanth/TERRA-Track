@@ -1,0 +1,200 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Reusable hardened primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'nayaksushanth0@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isRiderVisibleHazard(data) {
+      return data.keys().hasAny(['eventId', 'latitude', 'lat', 'severity', 'classification', 'repairStatus', 'status']) &&
+        (!('internalOnly' in data) || data.internalOnly == false);
+    }
+
+    function isRiderVisibleDevice(data) {
+      return data.keys().hasAny(['deviceId', 'status', 'lastSeen', 'gpsFix']) &&
+        (!('internalOnly' in data) || data.internalOnly == false);
+    }
+
+    function isRiderVisibleAlert(data) {
+      return data.keys().hasAny(['message', 'severity', 'active', 'alertId']) &&
+        (!('internalOnly' in data) || data.internalOnly == false);
+    }
+
+    // Pillar 2: Validation blueprints (synchronized with firebase-blueprint.json)
+    function isValidPotholeEvent(data) {
+      return data.keys().hasAll(['eventId', 'severity', 'repairStatus']) &&
+        data.keys().hasOnly([
+          'eventId',
+          'deviceId',
+          'latitude',
+          'longitude',
+          'timestamp',
+          'lastDetectedAt',
+          'classification',
+          'confidence',
+          'severity',
+          'detectionCount',
+          'repairStatus',
+          'verified',
+          'gpsValid',
+          'gpsAccuracy',
+          'roadName',
+          'municipalZone'
+        ]) &&
+        data.eventId is string && data.eventId.size() > 0 && data.eventId.size() <= 128 &&
+        data.eventId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] &&
+        data.repairStatus in ['PENDING', 'IN_PROGRESS', 'REPAIRED'] &&
+        (!('deviceId' in data) || (data.deviceId is string && data.deviceId.size() <= 128)) &&
+        (!('latitude' in data) || data.latitude is number) &&
+        (!('longitude' in data) || data.longitude is number) &&
+        (!('timestamp' in data) || (data.timestamp is string && data.timestamp.size() <= 64) || data.timestamp is timestamp) &&
+        (!('lastDetectedAt' in data) || (data.lastDetectedAt is string && data.lastDetectedAt.size() <= 64) || data.lastDetectedAt is timestamp) &&
+        (!('classification' in data) || (data.classification is string && data.classification.size() <= 64)) &&
+        (!('confidence' in data) || data.confidence is number) &&
+        (!('detectionCount' in data) || data.detectionCount is number) &&
+        (!('verified' in data) || data.verified is bool) &&
+        (!('gpsValid' in data) || data.gpsValid is bool) &&
+        (!('gpsAccuracy' in data) || data.gpsAccuracy is number) &&
+        (!('roadName' in data) || (data.roadName is string && data.roadName.size() <= 200)) &&
+        (!('municipalZone' in data) || (data.municipalZone is string && data.municipalZone.size() <= 200));
+    }
+
+    function isValidDeviceRecord(data) {
+      return data.keys().hasAll(['deviceId']) &&
+        data.keys().hasOnly(['deviceId', 'status', 'lastSeen', 'gpsFix', 'firmwareVersion']) &&
+        data.deviceId is string && data.deviceId.size() > 0 && data.deviceId.size() <= 128 &&
+        (!('status' in data) || (data.status is string && data.status.size() <= 64)) &&
+        (!('lastSeen' in data) || (data.lastSeen is string && data.lastSeen.size() <= 64) || data.lastSeen is timestamp) &&
+        (!('gpsFix' in data) || data.gpsFix is bool) &&
+        (!('firmwareVersion' in data) || (data.firmwareVersion is string && data.firmwareVersion.size() <= 64));
+    }
+
+    function isValidAlertRecord(data) {
+      return data.keys().hasAll(['message']) &&
+        data.keys().hasOnly(['alertId', 'severity', 'message', 'active', 'createdAt']) &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 500 &&
+        (!('alertId' in data) || (data.alertId is string && data.alertId.size() <= 128)) &&
+        (!('severity' in data) || data.severity in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']) &&
+        (!('active' in data) || data.active is bool) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64) || data.createdAt is timestamp);
+    }
+
+    function isValidRiderProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'role', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'role', 'updatedAt']) &&
+        data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == userId &&
+        data.role in ['rider'] &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        data.updatedAt is timestamp;
+    }
+
+    // Primary IoT pothole_events collection (written by backend Admin SDK or verified admins; read-only for authenticated riders)
+    match /pothole_events/{eventId} {
+      allow get: if isSignedIn() && isValidId(eventId) && isRiderVisibleHazard(existing());
+      allow list: if isSignedIn() && isRiderVisibleHazard(existing());
+      allow create: if isSignedIn() && isValidId(eventId) && isValidPotholeEvent(incoming()) && isAdmin();
+      allow update: if isSignedIn() && isValidId(eventId) && isValidPotholeEvent(incoming()) &&
+        incoming().eventId == existing().eventId &&
+        isAdmin();
+      allow delete: if isSignedIn() && isValidId(eventId) && isAdmin();
+    }
+
+    // Secondary potholes collection (same authorization boundary)
+    match /potholes/{potholeId} {
+      allow get: if isSignedIn() && isValidId(potholeId) && isRiderVisibleHazard(existing());
+      allow list: if isSignedIn() && isRiderVisibleHazard(existing());
+      allow create: if isSignedIn() && isValidId(potholeId) && isValidPotholeEvent(incoming()) && isAdmin();
+      allow update: if isSignedIn() && isValidId(potholeId) && isValidPotholeEvent(incoming()) &&
+        incoming().eventId == existing().eventId &&
+        isAdmin();
+      allow delete: if isSignedIn() && isValidId(potholeId) && isAdmin();
+    }
+
+    // IoT device records (read-only for authenticated riders; written by backend / admins)
+    match /devices/{deviceId} {
+      allow get: if isSignedIn() && isValidId(deviceId) && isRiderVisibleDevice(existing());
+      allow list: if isSignedIn() && isRiderVisibleDevice(existing());
+      allow create: if isSignedIn() && isValidId(deviceId) && isValidDeviceRecord(incoming()) && isAdmin();
+      allow update: if isSignedIn() && isValidId(deviceId) && isValidDeviceRecord(incoming()) &&
+        incoming().deviceId == existing().deviceId &&
+        isAdmin();
+      allow delete: if isSignedIn() && isValidId(deviceId) && isAdmin();
+    }
+
+    // Road safety alerts (read-only for authenticated riders; written by backend / admins)
+    match /alerts/{alertId} {
+      allow get: if isSignedIn() && isValidId(alertId) && isRiderVisibleAlert(existing());
+      allow list: if isSignedIn() && isRiderVisibleAlert(existing());
+      allow create: if isSignedIn() && isValidId(alertId) && isValidAlertRecord(incoming()) && isAdmin();
+      allow update: if isSignedIn() && isValidId(alertId) && isValidAlertRecord(incoming()) && isAdmin();
+      allow delete: if isSignedIn() && isValidId(alertId) && isAdmin();
+    }
+
+    // Private rider profile records (PII isolated to owner or verified admin)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && isAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidRiderProfile(incoming(), userId) &&
+        isOwner(userId) &&
+        incoming().role == 'rider' &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidRiderProfile(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().role == existing().role &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']))
+        );
+      allow delete: if isSignedIn() && isValidId(userId) && isAdmin();
+    }
+
+    // Trusted admin registry (immutable from client SDK)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+  }
+}

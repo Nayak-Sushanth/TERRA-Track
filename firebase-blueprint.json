@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "PotholeEvent": {
+      "title": "PotholeEvent",
+      "description": "Road hazard / pothole event ingested by the TERRA Track Node.js backend from ESP32 IoT devices and persisted in Firestore.",
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 64
+        },
+        "lastDetectedAt": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 64
+        },
+        "classification": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+        },
+        "detectionCount": {
+          "type": "number"
+        },
+        "repairStatus": {
+          "type": "string",
+          "enum": ["PENDING", "IN_PROGRESS", "REPAIRED"]
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "gpsValid": {
+          "type": "boolean"
+        },
+        "gpsAccuracy": {
+          "type": "number"
+        },
+        "roadName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "municipalZone": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": ["eventId", "severity", "repairStatus"]
+    },
+    "DeviceRecord": {
+      "title": "DeviceRecord",
+      "description": "IoT sensor unit status record maintained by the TERRA Track backend.",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "status": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 64
+        },
+        "gpsFix": {
+          "type": "boolean"
+        },
+        "firmwareVersion": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["deviceId"]
+    },
+    "AlertRecord": {
+      "title": "AlertRecord",
+      "description": "Road safety or hazard alert record stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "alertId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 64
+        }
+      },
+      "required": ["message"]
+    },
+    "RiderProfile": {
+      "title": "RiderProfile",
+      "description": "Authenticated rider profile and non-privileged alert settings stored per user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "enum": ["rider"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "role"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator lookup document.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        }
+      },
+      "required": ["uid", "role"]
+    }
+  },
+  "firestore": {
+    "/pothole_events/{eventId}": {
+      "schema": { "$ref": "#/entities/PotholeEvent" },
+      "description": "Primary real-time collection of IoT-detected pothole events written by the TERRA Track Node.js backend."
+    },
+    "/potholes/{potholeId}": {
+      "schema": { "$ref": "#/entities/PotholeEvent" },
+      "description": "Alternative pothole records collection if populated by the TERRA Track backend."
+    },
+    "/devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/DeviceRecord" },
+      "description": "IoT ESP32 sensor device status records."
+    },
+    "/alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/AlertRecord" },
+      "description": "System road safety alerts for riders."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/RiderProfile" },
+      "description": "Private rider profile documents isolated to the owning rider or admin."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Admin role registry (read-only by self, never client-writable)."
+    }
+  }
+}

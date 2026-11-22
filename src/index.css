@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  body {
+    background-color: #e6ebf2;
+    color: #111827;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.font-display {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.neu-raised-1 {
+  background-color: #e6ebf2;
+  box-shadow: 6px 6px 14px #c2c9d6, -6px -6px 14px #ffffff;
+}
+
+.neu-raised-2 {
+  background-color: #e6ebf2;
+  box-shadow: 8px 8px 18px #bcc3d1, -8px -8px 18px #ffffff;
+}
+
+.neu-inset {
+  background-color: #e6ebf2;
+  box-shadow: inset 4px 4px 8px #c2c9d6, inset -4px -4px 8px #ffffff;
+}
+
+.neu-inset-sm {
+  background-color: #e6ebf2;
+  box-shadow: inset 3px 3px 6px #c2c9d6, inset -3px -3px 6px #ffffff;
+}
+
+.neu-teal {
+  color: #ffffff;
+  background-color: #14b8a6;
+  box-shadow: 5px 5px 12px #9cb2b8, -5px -5px 12px #ffffff;
+}
+
+.neu-teal:active {
+  box-shadow: inset 3px 3px 6px #0d766e, inset -3px -3px 6px #2dd4bf;
+}
+
+.neu-btn-slate {
+  color: #111827;
+  background-color: #e6ebf2;
+  box-shadow: 6px 6px 14px #c2c9d6, -6px -6px 14px #ffffff;
+}
+
+.neu-btn-slate:active {
+  box-shadow: inset 4px 4px 8px #c2c9d6, inset -4px -4px 8px #ffffff;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.leaflet-container {
+  touch-action: pan-x pan-y;
+  background-color: #e6ebf2;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.terra-fullmap .leaflet-bottom.leaflet-right {
+  bottom: calc(7.4rem + env(safe-area-inset-bottom));
+  left: 0.75rem;
+  right: auto;
+}
+
+.terra-routemap .leaflet-bottom.leaflet-right {
+  bottom: 0.5rem;
+  left: 0.5rem;
+  right: auto;
+}
+
+.terra-pick-cursor .leaflet-container,
+.terra-pick-cursor .leaflet-grab {
+  cursor: crosshair !important;
+}
+
+.leaflet-control-attribution {
+  border-radius: 6px;
+  color: #1f2937 !important;
+  background: rgba(230, 235, 242, 0.9) !important;
+  font-size: 10px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

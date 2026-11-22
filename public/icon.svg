@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#14B8A6" />
+  <!-- White location pin -->
+  <path
+    d="M256 88C205.2 88 164 129.2 164 180C164 245.5 256 322 256 322C256 322 348 245.5 348 180C348 129.2 306.8 88 256 88Z"
+    fill="#FFFFFF"
+  />
+  <circle cx="256" cy="178" r="34" fill="#14B8A6" />
+  <!-- White perspective road -->
+  <path
+    d="M172 340H340L396 436H116L172 340Z"
+    fill="#FFFFFF"
+  />
+  <!-- Teal road center dashes -->
+  <rect x="247" y="352" width="18" height="26" rx="6" fill="#14B8A6" />
+  <rect x="245" y="392" width="22" height="32" rx="6" fill="#14B8A6" />
+</svg>

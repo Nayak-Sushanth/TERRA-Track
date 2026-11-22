@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "TERRA Track Rider",
+  "short_name": "TERRA Rider",
+  "description": "Mobile-first road-safety app for motorcycle riders showing real-time potholes reported by IoT sensors.",
+  "theme_color": "#14B8A6",
+  "background_color": "#E6EBF2",
+  "display": "standalone",
+  "start_url": ".",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
